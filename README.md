@@ -10,6 +10,8 @@ The goal of this project is to study and create a free, open-source re-implement
 
 Community
 ---------
+The homepage for this project is: https://blam.info/
+
 There is a Discord server for the project: https://discord.gg/wJFfe6c9UB
 
 Current State
@@ -19,54 +21,64 @@ Current State
 * Several more functions are implemented
 * Long way to go...
 
+The [Progress Report](https://blam.info/progress/) details what functionality has been re-implemented.
+
 Build
 -----
-You can build with Visual Studio or clang, on Windows/macOS/Linux. You'll also need Python 3.
+This project can be built with Visual Studio or Clang, on Windows, macOS, and Linux. Project tooling is developed with [Python 3](https://www.python.org/), so that will need to be installed, along with dependencies listed in requirements.txt. CMake will also need to be installed.
 
+Build overview:
 * First prepare `halo-patched` directory with disc files and original executable
   * Retail disc game files
   * Original executable version `01.10.12.2276` (MD5: `c7869590a1c64ad034e49a5ee0c02465`) as file `cachebeta.xbe`
-* You can build in a Docker container, or outside of a container with system tools (e.g. clang, MSVC).
+* You can build in a Docker container, or outside of a container with system tools (e.g. Clang, MSVC).
 * If not using a container to build, install system deps:
   * Ensure Python 3 is installed.
+  * Install Python requirements: `python -m pip install -r requirements.txt`
   * On Windows you can use Visual Studio (MSVC).
-  * On Linux/macOS/WSL you can use clang:
+  * On Linux/macOS/WSL you can use Clang.
 
 ### Build options
 
 Build with the Docker container:
-```
+```bash
 docker build -t halo .
 docker run -it --rm  -u $(id -u):$(id -g) -v $PWD:/work -w /work halo /bin/bash -c "cmake -Bbuild -S. -DCMAKE_TOOLCHAIN_FILE=toolchains/llvm.cmake && cmake --build build"
 ```
 
 Build on Windows with CMake and Visual Studio:
-```
+```bash
 python3 -m pip install --user -r requirements.txt
 cmake -AWin32 -Bbuild -S.
 cmake --build build
 ```
 
-Build on Linux (Ubuntu) with CMake and clang:
-```
+Build on Linux (Ubuntu) with CMake and Clang:
+```bash
 sudo apt install cmake clang lld python3-pip
 python3 -m pip install --user -r requirements.txt
 cmake -Bbuild -S. -DCMAKE_TOOLCHAIN_FILE=toolchains/llvm.cmake
 cmake --build build
 ```
 
-Build on macOS (works on both Intel and Apple Silicon macs) with CMake and clang:
-```
+Build on macOS (works on both Intel and Apple Silicon macs) with CMake and Clang:
+```bash
 brew install llvm cmake
 python3 -m pip install --user -r requirements.txt
 export PATH="/opt/homebrew/opt/llvm/bin:/usr/local/opt/llvm/bin:$PATH"
 cmake -Bbuild -S. -DCMAKE_TOOLCHAIN_FILE=$PWD/toolchains/llvm.cmake
-cmake --build build --target halo
+cmake --build build
 ```
 
 When the build is complete, the original game with re-implementation patched in will be at `halo-patched/default.xbe`. Use `extract-xiso` to create an ISO from your `halo-patched` directory, then run `halo-patched.iso` in xemu, or on your Xbox.
 
 You'll want to set up a debug environment.
+
+### GDB debugging
+
+To create an executable with symbols when building with the LLVM toolchain, add `-DCMAKE_BUILD_TYPE=Debug` argument to CMake when configuring the project.
+
+During the build process, a `.gdbinit` script is generated. This script will help initialize a gdb session for debugging. It will be loaded automatically when `gdb` is invoked from the current directory. You can launch xemu with a GDB server by passing the `-s` flag.
 
 Reversing
 ---------
@@ -77,3 +89,5 @@ The process of adding re-implemented functions is mostly automated and relativel
 * Implement new functions in the appropriate source file `src/halo/**/*.c`. Add new source files to `src/CMakeLists.txt`.
 * The build system will compile and patch the XBE with redirects from the original implementations to the re-implementations.
 * Naturally, your new code will call some function in the original binary that has not yet been re-implemented. These functions will also be automatically linked correctly, provided the definitions of data and called functions are in `kb.json`.
+
+See the [Progress Report](https://blam.info/progress/) to interactively explore the call graph, familiarize yourself with the code base, and examine the project frontier.
